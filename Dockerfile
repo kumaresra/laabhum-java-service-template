@@ -9,7 +9,7 @@ COPY src src
 RUN ./mvnw install -DskipTests
 
 ARG JAR_FILE=target/*.jar
-COPY ${JAR_FILE} target/application.jar
+COPY target/post-trade-streaming-service-0.0.1-SNAPSHOT.jar target/application.jar
 RUN java -Djarmode=layertools -jar target/application.jar extract --destination target/extracted
 
 FROM eclipse-temurin:21.0.2_13-jdk-alpine
