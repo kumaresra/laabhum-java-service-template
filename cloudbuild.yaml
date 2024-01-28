@@ -7,8 +7,10 @@ substitutions:
   _IMAGE_NAME: post-trade-streaming-service
 # [START cloudbuild_quickstart_build]
 steps:
-  - name: 'gcr.io/cloud-builders/docker'
-    env: ['DOCKER_BUILDKIT=1']
+  - name: Set up Docker Buildx
+    uses: docker/setup-buildx-action@v1
+    with:
+      version: v0.7.0
     args:
       [
         'build',
