@@ -8,6 +8,7 @@ substitutions:
 # [START cloudbuild_quickstart_build]
 steps:
   - name: 'gcr.io/cloud-builders/docker'
+    env: ['DOCKER_BUILDKIT=1']
     args:
       [
         'build',
