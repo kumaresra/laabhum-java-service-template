@@ -1,0 +1,30 @@
+# Logging option
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _ENV: prod
+  _IMAGE_NAME: post-trade-streaming-service
+# [START cloudbuild_quickstart_build]
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'build',
+        '--cache-from',
+        'asia-southeast1-docker.pkg.dev/n51-platfrom/repo/$_IMAGE_NAME:latest',
+        '-t',
+        'asia-southeast1-docker.pkg.dev/n51-platfrom/repo/$_IMAGE_NAME:$SHORT_SHA',
+        '-t',
+        'asia-southeast1-docker.pkg.dev/n51-platfrom/repo/$_IMAGE_NAME:develop',
+        '-t',
+        'asia-southeast1-docker.pkg.dev/n51-platfrom/repo/$_IMAGE_NAME:latest',
+        '.',
+      ]
+images:
+  [
+    'asia-southeast1-docker.pkg.dev/n51-platfrom/repo/$_IMAGE_NAME:$SHORT_SHA',
+    'asia-southeast1-docker.pkg.dev/n51-platfrom/repo/$_IMAGE_NAME:latest',
+    'asia-southeast1-docker.pkg.dev/n51-platfrom/repo/$_IMAGE_NAME:develop'
+  ]
+# [END cloudbuild_quickstart_build]
