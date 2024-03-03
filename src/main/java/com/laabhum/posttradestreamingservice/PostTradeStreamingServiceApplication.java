@@ -14,7 +14,7 @@ public class PostTradeStreamingServiceApplication {
 		SpringApplication.run(PostTradeStreamingServiceApplication.class, args);
 	}
 
- 
+
 	
 	
 

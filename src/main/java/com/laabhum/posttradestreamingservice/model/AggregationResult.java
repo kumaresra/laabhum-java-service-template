@@ -5,7 +5,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 @Data
-@NoArgsConstructor
 public class AggregationResult  {
     private long timeFrame;
     private double difference;
@@ -23,8 +22,11 @@ public class AggregationResult  {
         this.timeFrame = timeFrame;
     }
 
-    public AggregationResult get(){
-        return  new AggregationResult();
+
+
+    public AggregationResult(){
+         this.setDifference(0.0);
+
     }
 
 }
