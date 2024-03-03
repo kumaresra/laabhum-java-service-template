@@ -29,7 +29,7 @@ import static org.apache.kafka.streams.StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_C
 @EnableKafka
 public class KafkaConfig {
 
-	public static final int WINDOW_RANGE = 30;
+	public static final int WINDOW_RANGE = 60;
 
 	@Value("${laabhum.kafka.brokers:localhost:9092}")
 	private String brokers;
@@ -46,7 +46,7 @@ public class KafkaConfig {
 		Properties props = new Properties();
 		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "open-interest-change");
 		props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
-		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 
 		props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
 		props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, new AggregationResultSerde().getClass().getName());
