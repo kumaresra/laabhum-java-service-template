@@ -1,7 +1,8 @@
 package com.laabhum.posttradestreamingservice.config;
 
-import java.time.Duration;
-import java.time.Instant;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Properties;
 
 import com.laabhum.posttradestreamingservice.model.AggregationResult;
@@ -53,6 +54,10 @@ public class KafkaConfig {
 		StreamsBuilder builder = new StreamsBuilder();
 		KStream<String, Instrument> openInterestStream = builder.stream(ticksSourceTopic, Consumed.with(Serdes.String(), new InstrumentSerde()));
 
+
+		ZoneId mumbaiZone = ZoneId.of("Asia/Kolkata");
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS", Locale.ENGLISH);
+
 	 openInterestStream
 		.groupByKey()
 		.windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofSeconds(WINDOW_RANGE)))
@@ -62,14 +67,13 @@ public class KafkaConfig {
 
 
 						double last_price = instrument.getLast_price();
-						double difference = last_price - aggregate.getDifference();
+						double diff = last_price - aggregate.getDiff();
 						int instrumentToken = instrument.getInstrument_token();
 						Ohlc ohlc = instrument.getOhlc();
-
-						return new AggregationResult(WINDOW_RANGE,difference, Instant.now(), instrumentToken, last_price, ohlc);
+						return new AggregationResult(WINDOW_RANGE,diff, ZonedDateTime.of(LocalDateTime.now(), mumbaiZone).format(formatter), instrumentToken, last_price, ohlc);
 
 				}, // aggregator
-				Materialized.as("open_interest_difference") // store name
+				Materialized.as("open_interest_mat") // store name
 				)
 		.toStream()
 		.map((Windowed<String> key, AggregationResult value) -> KeyValue.pair(key.key(), value))
