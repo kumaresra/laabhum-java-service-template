@@ -1,8 +1,10 @@
 package com.laabhum.posttradestreamingservice.model;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class Instrument {
 	private boolean tradable;
 	private String mode;
