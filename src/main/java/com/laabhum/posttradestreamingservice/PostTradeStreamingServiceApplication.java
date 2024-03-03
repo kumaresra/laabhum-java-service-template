@@ -14,14 +14,7 @@ public class PostTradeStreamingServiceApplication {
 		SpringApplication.run(PostTradeStreamingServiceApplication.class, args);
 	}
 
-	@KafkaListener(topics = "open_interest_difference_topic")
-	public void processMessage(String message) {
-
-		log.info("message receoved");
-		 //System.out.println("Received message from input-topic:" + message);
-		 
-		// Your processing logic here
-	}
+ 
 	
 	
 
