@@ -2,6 +2,7 @@ package com.laabhum.posttradestreamingservice.config;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalUnit;
 import java.util.Locale;
 import java.util.Properties;
 
@@ -98,20 +99,16 @@ public class KafkaConfig {
 
 		props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
 		props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, new OpenInterestResultSerde().getClass().getName());
-		props.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 5* 60* 1000); // Set commit interval to 10 seconds
+		//props.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 2* 60* 1000); // Set commit interval to 10 seconds
 
 		StreamsBuilder builder = new StreamsBuilder();
 		KStream<String, OptionGreek> openInterestStream = builder.stream(optionGreekSourceTopic, Consumed.with(Serdes.String(), new OptionGreekSerde()));
 
 
-		ZoneId mumbaiZone = ZoneId.of("Asia/Kolkata");
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS", Locale.ENGLISH);
-		TimeWindows slidingWindow = TimeWindows.of(Duration.ofMinutes(5)) ;// 5 minutes
+		MinutesTimeWindow slidingWindow =  new MinutesTimeWindow(ZoneId.of("Asia/Singapore"),23,Duration.ofSeconds(0));// 5 minutes
 
 		openInterestStream
-
-				.filter((a,b)-> b.getToken() == 10071810)
-				.peek((a,b)-> System.out.println(b.getOi()))
+				.peek((a,b)-> System.out.println(Instant.now()+" : "+b.getOi()))
 				.groupByKey()
 				.windowedBy(slidingWindow)
 				.aggregate(
@@ -121,7 +118,7 @@ public class KafkaConfig {
 							return aggregate;
 						},
 						Materialized.with(Serdes.String(), new FirstLastMessageSerde())
-				)
+				).suppress(Suppressed.untilWindowCloses(Suppressed.BufferConfig.unbounded()))
 				.toStream()
 				.map((key, value) -> {
 					OpenInterestResult openInterestResult = new OpenInterestResult(
