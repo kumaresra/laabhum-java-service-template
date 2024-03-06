@@ -1,8 +1,10 @@
-package com.laabhum.posttradestreamingservice.config;
+package com.laabhum.posttradestreamingservice.helper;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.streams.kstream.Windows;
 import org.apache.kafka.streams.kstream.internals.TimeWindow;
+
+import com.laabhum.posttradestreamingservice.constants.Minutes;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -19,9 +21,9 @@ public class CustomMinutesWindow extends Windows<TimeWindow> {
     private final ZoneId zoneId;
     private final int minutes;
 
-    public CustomMinutesWindow(ZoneId zoneId, int minutes) {
+    public CustomMinutesWindow(ZoneId zoneId, Minutes minutes) {
         this.zoneId = zoneId;
-        this.minutes = minutes;
+        this.minutes = minutes.getValue();
 
     }
 

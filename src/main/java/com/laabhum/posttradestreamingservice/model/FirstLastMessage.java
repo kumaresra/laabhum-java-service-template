@@ -8,9 +8,8 @@ public class FirstLastMessage {
     private OptionGreek firstOi;
     private OptionGreek lastOi;
 
-    public void add(OptionGreek data, String key) {
+    public void add(OptionGreek data) {
         if (firstOi  == null) {
-
             firstOi = data;
         }
         lastOi = data;
