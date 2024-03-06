@@ -30,7 +30,7 @@ public class KafkaStreamsConfig {
 	@Value("${laabhum.kafka.brokers:localhost:9092}")
 	private String brokers;
 
-	@Value("${laabhum.topic.oi.input:topic_greeks_from_broker_stream}")
+	@Value("${laabhum.topic.oi.input:topic_oi_from_broker_stream}")
 	private String optionGreekSourceTopic;
 	
 	@Value("${laabhum.topic.oi.output.prefix:oi_change_diff_topic}")
