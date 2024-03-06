@@ -33,7 +33,7 @@ public class KafkaStreamsConfig {
 	@Value("${laabhum.topic.oi.input:topic_oi_from_broker_stream}")
 	private String optionGreekSourceTopic;
 	
-	@Value("${laabhum.topic.oi.output.prefix:oi_change_diff_topic}")
+	@Value("${laabhum.topic.oi.output.prefix:topic_oi_change_diff}")
 	private String openInterestOutputTopic;
 	
 	@Value("${laabhum.data.zone:Asia/Singapore}")	 
