@@ -127,6 +127,7 @@ public class KafkaStreamsConfig {
 		
 		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "oi-change-diff".concat("-").concat(String.valueOf(minutes.getValue())));
 		
+		//props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, 5);
 		return props;
 	}
 
