@@ -1,22 +1,21 @@
 package com.laabhum.posttradestreamingservice.util;
 
+import com.laabhum.posttradestreamingservice.model.Ohlc;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serializer;
 
-import java.util.Map;
+public class OpenInterestResultSerde implements Serde<Ohlc.OpenInterestResult> {
 
-public class OpenInterestResultSerde implements Serde<OpenInterestResult> {
-
-    JsonSerializer<OpenInterestResult> serializer = new JsonSerializer<>();
-    JsonDeserializer<OpenInterestResult> deserializer = new JsonDeserializer<>(OpenInterestResult.class);
+    JsonSerializer<Ohlc.OpenInterestResult> serializer = new JsonSerializer<>();
+    JsonDeserializer<Ohlc.OpenInterestResult> deserializer = new JsonDeserializer<>(Ohlc.OpenInterestResult.class);
     @Override
-    public Serializer<OpenInterestResult> serializer() {
+    public Serializer<Ohlc.OpenInterestResult> serializer() {
         return serializer;
     }
 
     @Override
-    public Deserializer<OpenInterestResult> deserializer() {
+    public Deserializer<Ohlc.OpenInterestResult> deserializer() {
         return deserializer;
     }
 

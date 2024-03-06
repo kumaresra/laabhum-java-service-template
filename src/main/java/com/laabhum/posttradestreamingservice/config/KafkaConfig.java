@@ -1,9 +1,6 @@
 package com.laabhum.posttradestreamingservice.config;
 
 import java.time.*;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalUnit;
-import java.util.Locale;
 import java.util.Properties;
 
 import com.laabhum.posttradestreamingservice.model.*;
@@ -20,6 +17,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 
+import static com.laabhum.posttradestreamingservice.util.Utils.getFormattedDate;
 import static org.apache.kafka.streams.StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG;
 
 
@@ -32,98 +30,77 @@ public class KafkaConfig {
 	@Value("${laabhum.kafka.brokers:localhost:9092}")
 	private String brokers;
 
-	@Value("${laabhum.topic.ticks.input:topic_ticks_from_broker}")
-	private String ticksSourceTopic;
 	@Value("${laabhum.topic.greeks.input:topic_greeks_from_broker_stream}")
 	private String optionGreekSourceTopic;
-	@Value("${laabhum.topic.oi.output:open_interest_difference_topic}")
+	@Value("${laabhum.topic.oi.output:oi_change_diff_topic}")
 	private String openInterestOutputTopic;
-	@Value("${laabhum.topic.tick.output:tick_difference_topic}")
-	private String tickOutputTopic;
 
-
-//	@Bean
-//	KafkaStreams tickKafkaStreams() {
-//		Properties props = new Properties();
-//		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "tick-change");
-//		props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
-//		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
-//
-//		props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
-//		props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, new AggregationResultSerde().getClass().getName());
-//
-//		StreamsBuilder builder = new StreamsBuilder();
-//		KStream<String, Instrument> openInterestStream = builder.stream(ticksSourceTopic, Consumed.with(Serdes.String(), new InstrumentSerde()));
-//
-//
-//		ZoneId mumbaiZone = ZoneId.of("Asia/Kolkata");
-//		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS", Locale.ENGLISH);
-//
-//	 openInterestStream
-//		.groupByKey()
-//		.windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofSeconds(WINDOW_RANGE)))
-//		.aggregate(
-//                AggregationResult::new,
-//				(String key, Instrument instrument, AggregationResult aggregate) ->  {
-//
-//
-//						double last_price = instrument.getLast_price();
-//						double diff = last_price - aggregate.getDiff();
-//						int instrumentToken = instrument.getInstrument_token();
-//						Ohlc ohlc = instrument.getOhlc();
-//
-//						return new AggregationResult(WINDOW_RANGE,diff, ZonedDateTime.of(LocalDateTime.now(), mumbaiZone).format(formatter), instrumentToken, last_price, ohlc);
-//
-//				}, // aggregator
-//				Materialized.as("open_interest_mat") // store name
-//				)
-//		.toStream()
-//		.map((Windowed<String> key, AggregationResult value) -> KeyValue.pair(key.key(), value))
-//		.to(tickOutputTopic, Produced.with(Serdes.String(), new AggregationResultSerde()));
-//
-//		KafkaStreams streams = new KafkaStreams(builder.build(), props);
-//		streams.start();
-//		Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
-//
-//		return streams;
-//	}
 
 
 
 	@Bean
-	KafkaStreams openInterestkafkaStreams() {
-		Properties props = new Properties();
-		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "open-interest-change1");
-		props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
-		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+	KafkaStreams openInterestkafkaStreams1Minute() {
+		int minutes = 1;
+ return getKafkaStreams(minutes);
 
-		props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
-		props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, new OpenInterestResultSerde().getClass().getName());
-		//props.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 2* 60* 1000); // Set commit interval to 10 seconds
+
+	}
+	@Bean
+	KafkaStreams openInterestkafkaStreams5Minute() {
+		int minutes = 5;
+		return getKafkaStreams(minutes);
+
+
+	}
+	@Bean
+	KafkaStreams openInterestkafkaStreams15Minute() {
+		int minutes = 15;
+		return getKafkaStreams(minutes);
+
+
+	}
+	@Bean
+	KafkaStreams openInterestkafkaStreams30Minute() {
+		int minutes = 30;
+		return getKafkaStreams(minutes);
+
+
+	}
+	@Bean
+	KafkaStreams openInterestkafkaStreams60Minute() {
+		int minutes = 60;
+		return getKafkaStreams(minutes);
+
+
+	}
+
+	private KafkaStreams getKafkaStreams(int minutes) {
+		Properties props = getProperties(minutes);
+
+		ZoneId zoneId = ZoneId.of("Asia/Singapore");
+		CustomMinutesWindow slidingWindow =  new CustomMinutesWindow(zoneId, minutes);// 1 minute
 
 		StreamsBuilder builder = new StreamsBuilder();
 		KStream<String, OptionGreek> openInterestStream = builder.stream(optionGreekSourceTopic, Consumed.with(Serdes.String(), new OptionGreekSerde()));
 
-
-		MinutesTimeWindow slidingWindow =  new MinutesTimeWindow(ZoneId.of("Asia/Singapore"),23,Duration.ofSeconds(0));// 5 minutes
-
 		openInterestStream
-				.peek((a,b)-> System.out.println(Instant.now()+" : "+b.getOi()))
 				.groupByKey()
 				.windowedBy(slidingWindow)
 				.aggregate(
                         FirstLastMessage::new, // initializer
 						(key, value, aggregate) -> { // aggregator
-							aggregate.add(value);
+							aggregate.add(value, key);
 							return aggregate;
 						},
 						Materialized.with(Serdes.String(), new FirstLastMessageSerde())
 				).suppress(Suppressed.untilWindowCloses(Suppressed.BufferConfig.unbounded()))
 				.toStream()
 				.map((key, value) -> {
-					OpenInterestResult openInterestResult = new OpenInterestResult(
-							key.window().start(),
-							key.window().end(),
+					Ohlc.OpenInterestResult openInterestResult = new Ohlc.OpenInterestResult(
+							getFormattedDate(key.window().start(), zoneId),
+
+							getFormattedDate(key.window().end(), zoneId),
+							Duration.between(Instant.ofEpochSecond(key.window().start()),Instant.ofEpochSecond(key.window().end())).toMinutes(),
 							key.key(),
 							value.getLastOi().getOi() - value.getFirstOi().getOi(),
 							value.getFirstOi().getToken(),
@@ -132,13 +109,28 @@ public class KafkaConfig {
 					);
 					return KeyValue.pair(key.key(), openInterestResult);
 				})
-				.to(openInterestOutputTopic, Produced.<String, OpenInterestResult>with(Serdes.String(), new OpenInterestResultSerde())); // Send output to another topic
+				.to(getOutputTopic(minutes), Produced.<String, Ohlc.OpenInterestResult>with(Serdes.String(), new OpenInterestResultSerde())); // Send output to another topic
 
 		KafkaStreams streams = new KafkaStreams(builder.build(), props);
 		streams.start();
 		Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
-
 		return streams;
+	}
+
+	private Properties getProperties(int minutes) {
+		Properties props = new Properties();
+
+		props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
+		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+
+		props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
+		props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, new OpenInterestResultSerde().getClass().getName());
+		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "oi-change-diff".concat("-").concat(String.valueOf(minutes)));
+		return props;
+	}
+
+	private String getOutputTopic(int minutes) {
+		return openInterestOutputTopic.concat("_").concat(String.valueOf(minutes));
 	}
 
 
