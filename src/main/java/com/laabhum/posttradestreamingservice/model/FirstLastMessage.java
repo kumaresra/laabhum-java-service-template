@@ -10,7 +10,7 @@ public class FirstLastMessage {
 
     public void add(OptionGreek data, String key) {
         if (firstOi  == null) {
-           
+
             firstOi = data;
         }
         lastOi = data;
