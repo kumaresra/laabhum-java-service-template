@@ -1,10 +1,10 @@
 package com.laabhum.posttradestreamingservice.util;
 
-import com.laabhum.posttradestreamingservice.model.Ohlc;
-import com.laabhum.posttradestreamingservice.model.OpenInterestResult;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serializer;
+
+import com.laabhum.posttradestreamingservice.model.OpenInterestResult;
 
 public class OpenInterestResultSerde implements Serde<OpenInterestResult> {
 

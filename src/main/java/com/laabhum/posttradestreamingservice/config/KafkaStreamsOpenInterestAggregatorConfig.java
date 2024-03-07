@@ -36,10 +36,10 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 
 	@Value("${laabhum.topic.oi.input:topic_oi_from_broker_stream}")
 	private String optionGreekSourceTopic;
-	
+
 	@Value("${laabhum.topic.oi.output.prefix:topic_oi_change_diff}")
 	private String openInterestOutputTopic;
-	
+
 	@Value("${laabhum.data.zone:Asia/Singapore}")	 
 	private String zoneIdStr;
 
@@ -56,7 +56,7 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 	KafkaStreams openInterestkafkaStreams5Minute() {
 		return buildOiStream(Minutes.FIVE);
 	}
-	
+
 	@Bean
 	KafkaStreams openInterestkafkaStreams15Minute() {
 		return buildOiStream(Minutes.FIFTEEN);
@@ -75,7 +75,7 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 	}
 
 	private KafkaStreams buildOiStream(Minutes minutes) {
-		
+
 		Properties props = getProperties(minutes);
 
 		ZoneId zoneId = ZoneId.of(zoneIdStr);
@@ -85,8 +85,8 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 		KTable<String, Instrument> priceTable = builder.table(instrumentPriceInputTopic,Consumed.with(Serdes.String(), new InstrumentSerde()));
 		KStream<String, OptionGreek> openInterestStream = builder.stream(optionGreekSourceTopic, Consumed.with(Serdes.String(), new OptionGreekSerde()));
 		openInterestStream.leftJoin(priceTable, (greek, price) -> {
-			   greek.setPrice(price.getLast_price());
-			   return greek;
+			greek.setPrice(price.getLast_price());
+			return greek;
 		}, Joined.with(Serdes.String(), new OptionGreekSerde(), new InstrumentSerde()))
 		.groupByKey()
 		.windowedBy(slidingWindow)
@@ -111,10 +111,10 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 					value.getFirstOi().getToken(),
 					value.getFirstOi().getOi(),
 					value.getFirstOi().getPrice(),
-					 value.getLastOi().getOi(),
-					 value.getLastOi().getPrice(),
+					value.getLastOi().getOi(),
+					value.getLastOi().getPrice(),
 					priceChange,
-					 findOiInterpretation(priceChange,oiChange).name(),
+					findOiInterpretation(priceChange,oiChange).name(),
 					findOiSentiment(priceChange,oiChange)
 					);
 			return KeyValue.pair(key.key(), openInterestResult);
@@ -165,26 +165,26 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 
 	@SuppressWarnings("resource")
 	private Properties getProperties(Minutes minutes) {
-		
+
 		Properties props = new Properties();
-		
+
 		props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
-		
+
 		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
-		
+
 		props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
 		props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, new OpenInterestResultSerde().getClass().getName());
-		
+
 		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "oi-change-diff".concat("-").concat(String.valueOf(minutes.getValue())));
-		
+
 		//props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, 5);
 		return props;
 	}
 
 	private String getOutputTopic(Minutes minutes) {
-		
+
 		return openInterestOutputTopic.concat("_").concat(String.valueOf(minutes.getValue()));
-		
+
 	}
 
 

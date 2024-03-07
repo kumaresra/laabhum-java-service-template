@@ -1,12 +1,12 @@
 package com.laabhum.posttradestreamingservice.util;
 
-import com.laabhum.posttradestreamingservice.model.AggregationResult;
-import com.laabhum.posttradestreamingservice.model.Instrument;
+import java.util.Map;
+
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serializer;
 
-import java.util.Map;
+import com.laabhum.posttradestreamingservice.model.Instrument;
 
 public class InstrumentSerde implements Serde<Instrument> {
 

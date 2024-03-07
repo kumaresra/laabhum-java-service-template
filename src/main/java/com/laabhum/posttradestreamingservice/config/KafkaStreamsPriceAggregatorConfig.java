@@ -41,10 +41,10 @@ public class KafkaStreamsPriceAggregatorConfig {
 
 	@Value("${laabhum.topic.price.input:topic_price_from_broker_stream}")
 	private String instrumentPriceInputTopic;
-	
+
 	@Value("${laabhum.topic.price.output.prefix:topic_price_change_diff}")
 	private String openInterestOutputTopic;
-	
+
 	@Value("${laabhum.data.zone:Asia/Singapore}")	 
 	private String zoneIdStr;
 
@@ -68,7 +68,7 @@ public class KafkaStreamsPriceAggregatorConfig {
 	KafkaStreams tickAggKafkaStreams5Minute() {
 		return buildPriceStream(Minutes.FIVE);
 	}
-	
+
 	@Bean
 	KafkaStreams tickAggKafkaStreams15Minute() {
 		return buildPriceStream(Minutes.FIFTEEN);
@@ -87,7 +87,7 @@ public class KafkaStreamsPriceAggregatorConfig {
 	}
 
 	private KafkaStreams buildPriceStream(Minutes minutes) {
-		
+
 		Properties props = getProperties(minutes);
 
 		ZoneId zoneId = ZoneId.of(zoneIdStr);
@@ -132,26 +132,26 @@ public class KafkaStreamsPriceAggregatorConfig {
 
 	@SuppressWarnings("resource")
 	private Properties getProperties(Minutes minutes) {
-		
+
 		Properties props = new Properties();
-		
+
 		props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
-		
+
 		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
-		
+
 		props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
 		props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, new TickSerde().getClass().getName());
-		
+
 		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "price-change-diff".concat("-").concat(String.valueOf(minutes.getValue())));
-		
+
 		//props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, 5);
 		return props;
 	}
 
 	private String getOutputTopic(Minutes minutes) {
-		
+
 		return openInterestOutputTopic.concat("_").concat(String.valueOf(minutes.getValue()));
-		
+
 	}
 
 
