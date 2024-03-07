@@ -27,7 +27,7 @@ import static org.apache.kafka.streams.StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_C
 @EnableKafka
 public class KafkaStreamsOpenInterestAggregatorConfig {
 
-	@Value("${laabhum.kafka.brokers:localhost:9092}")
+	@Value("${spring.kafka.bootstrap-servers:localhost:9092}")
 	private String brokers;
 
 	@Value("${laabhum.topic.oi.input:topic_oi_from_broker_stream}")
