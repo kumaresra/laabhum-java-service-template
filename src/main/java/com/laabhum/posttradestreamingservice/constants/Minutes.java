@@ -2,6 +2,7 @@ package com.laabhum.posttradestreamingservice.constants;
 
 public enum Minutes {
     ONE(1),
+    THREE(3),
     FIVE(5),
     TEN(10),
     FIFTEEN(15),
