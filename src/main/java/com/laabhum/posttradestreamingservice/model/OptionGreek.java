@@ -13,8 +13,4 @@ import java.util.Locale;
 public class OptionGreek {
     private int token;
     private int oi;
-
-
-
-
 }

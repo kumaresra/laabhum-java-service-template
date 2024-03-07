@@ -17,8 +17,7 @@ public class Tick {
     private double close;
     private double high;
     private double low;
- 
-  
+
 }
 
  

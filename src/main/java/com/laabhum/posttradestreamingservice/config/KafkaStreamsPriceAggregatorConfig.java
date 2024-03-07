@@ -22,7 +22,6 @@ import org.apache.kafka.streams.kstream.Suppressed;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.annotation.EnableKafka;
 
 import com.laabhum.posttradestreamingservice.constants.Minutes;
 import com.laabhum.posttradestreamingservice.helper.CustomMinutesWindow;
@@ -35,10 +34,9 @@ import com.laabhum.posttradestreamingservice.util.TickSerde;
 
 
 @Configuration
-@EnableKafka
 public class KafkaStreamsPriceAggregatorConfig {
 
-	@Value("${laabhum.kafka.brokers:localhost:9092}")
+	@Value("${spring.kafka.bootstrap-servers:localhost:9092}")
 	private String brokers;
 
 	@Value("${laabhum.topic.price.input:topic_price_from_broker_stream}")
@@ -104,7 +102,6 @@ public class KafkaStreamsPriceAggregatorConfig {
 				InstrumentOhlc::new, // initializer
 				(key, value, aggregate) -> { // aggregator
 					aggregate.add(value);
-				
 					return aggregate;
 				},
 				Materialized.with(Serdes.String(), new InstrumentOhlcSerde())
@@ -116,10 +113,10 @@ public class KafkaStreamsPriceAggregatorConfig {
 					getFormattedDate(key.window().end(), zoneId),
 					Duration.between(Instant.ofEpochSecond(key.window().start()),Instant.ofEpochSecond(key.window().end())).toMinutes(),
 					key.key(),
-					value.getLastInstrument().getLast_price() - value.getFirstInstrument().getLast_price(),
-					value.getFirstInstrument().getInstrument_token(),
-					value.getFirstInstrument().getLast_price(),
-					value.getLastInstrument().getLast_price(),
+					value.getCloseInstrument().getLast_price() - value.getOpenInstrument().getLast_price(),
+					value.getOpenInstrument().getInstrument_token(),
+					value.getOpenInstrument().getLast_price(),
+					value.getCloseInstrument().getLast_price(),
 					value.getMinInstrument().getLast_price(),
 					value.getMaxInstrument().getLast_price()
 					);

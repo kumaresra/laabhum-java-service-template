@@ -17,5 +17,4 @@ public class Instrument {
 	private int total_sell_quantity;
 	private Ohlc ohlc;
 	private double change;
-    
 }

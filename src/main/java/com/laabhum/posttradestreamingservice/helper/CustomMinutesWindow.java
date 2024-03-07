@@ -24,7 +24,6 @@ public class CustomMinutesWindow extends Windows<TimeWindow> {
     public CustomMinutesWindow(ZoneId zoneId, Minutes minutes) {
         this.zoneId = zoneId;
         this.minutes = minutes.getValue();
-
     }
 
 
@@ -34,13 +33,11 @@ public class CustomMinutesWindow extends Windows<TimeWindow> {
         // Convert timestamp to ZonedDateTime
         ZonedDateTime incomingDateTime = Instant.ofEpochMilli(timestamp).atZone(zoneId);
         log.debug("incomingDateTime {}", incomingDateTime.format(FORMATTER));
-
         // Set the window start time to align with the nearest x-minute interval
         int multiplesOf = this.minutes;
         ZonedDateTime windowStartTime = incomingDateTime.truncatedTo(ChronoUnit.HOURS) // Start of the hour
                 .plusMinutes((long) (incomingDateTime.getMinute() / multiplesOf) * multiplesOf);
         log.debug("windowStartTime {}", windowStartTime.format(FORMATTER));
-
         ZonedDateTime windowEndTime = windowStartTime.plusMinutes(this.minutes);
         log.debug("windowEndTime {}", windowEndTime.format(FORMATTER));
         // Create the window
