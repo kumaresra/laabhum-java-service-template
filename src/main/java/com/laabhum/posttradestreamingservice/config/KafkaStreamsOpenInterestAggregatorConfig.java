@@ -49,29 +49,34 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 
 
 	@Bean
+	@ConditionalOnProperty(name = "oi.1min", havingValue = "true",matchIfMissing = true)
 	KafkaStreams openInterestkafkaStreams1Minute() {
 		return buildOiStream(Minutes.ONE);
 
 
 	}
 	@Bean
+	@ConditionalOnProperty(name = "oi.5min", havingValue = "true",matchIfMissing = true)
 	KafkaStreams openInterestkafkaStreams5Minute() {
 		return buildOiStream(Minutes.FIVE);
 	}
 
 	@Bean
+	@ConditionalOnProperty(name = "oi.15min", havingValue = "true",matchIfMissing = true)
 	KafkaStreams openInterestkafkaStreams15Minute() {
 		return buildOiStream(Minutes.FIFTEEN);
 
 
 	}
 	@Bean
+	@ConditionalOnProperty(name = "oi.30min", havingValue = "true", matchIfMissing = true)
 	KafkaStreams openInterestkafkaStreams30Minute() {
 		return buildOiStream(Minutes.THIRTY);
 
 
 	}
 	@Bean
+	@ConditionalOnProperty(name = "oi.60min", havingValue = "true", matchIfMissing = true)
 	KafkaStreams openInterestkafkaStreams60Minute() {
 		return buildOiStream(Minutes.SIXTY);
 	}

@@ -52,6 +52,7 @@ public class KafkaStreamsPriceAggregatorConfig {
 
 
 	@Bean
+		@ConditionalOnProperty(name = "tick.1min", havingValue = "true",matchIfMissing = true)
 	KafkaStreams tickAggKafkaStreams1Minute() {
 		return buildPriceStream(Minutes.ONE);
 
@@ -59,29 +60,34 @@ public class KafkaStreamsPriceAggregatorConfig {
 	}
 
 	@Bean
+		@ConditionalOnProperty(name = "tick.3min", havingValue = "true",matchIfMissing = true)
 	KafkaStreams tickAggKafkaStreams3Minute() {
 		return buildPriceStream(Minutes.THREE);
 
 
 	}
 	@Bean
+		@ConditionalOnProperty(name = "tick.5min", havingValue = "true",matchIfMissing = true)
 	KafkaStreams tickAggKafkaStreams5Minute() {
 		return buildPriceStream(Minutes.FIVE);
 	}
 
 	@Bean
+		@ConditionalOnProperty(name = "tick.15min", havingValue = "true",matchIfMissing = true)
 	KafkaStreams tickAggKafkaStreams15Minute() {
 		return buildPriceStream(Minutes.FIFTEEN);
 
 
 	}
 	@Bean
+		@ConditionalOnProperty(name = "tick.30min", havingValue = "true",matchIfMissing = true)
 	KafkaStreams tickAggKafkaStreams30Minute() {
 		return buildPriceStream(Minutes.THIRTY);
 
 
 	}
 	@Bean
+		@ConditionalOnProperty(name = "tick.60min", havingValue = "true",matchIfMissing = true)
 	KafkaStreams tickAggKafkaStreams60Minute() {
 		return buildPriceStream(Minutes.SIXTY);
 	}
