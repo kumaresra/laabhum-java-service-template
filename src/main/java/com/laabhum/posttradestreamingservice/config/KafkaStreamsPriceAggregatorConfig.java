@@ -6,6 +6,7 @@ import static org.apache.kafka.streams.StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_C
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -34,7 +35,6 @@ import com.laabhum.posttradestreamingservice.util.InstrumentListSerde;
 import com.laabhum.posttradestreamingservice.util.TickSerde;
 
 
-@Configuration
 public class KafkaStreamsPriceAggregatorConfig {
 
 	@Value("${spring.kafka.bootstrap-servers:localhost:9092}")
@@ -102,7 +102,7 @@ public class KafkaStreamsPriceAggregatorConfig {
 
 		StreamsBuilder builder = new StreamsBuilder();
 		KStream<String, InstrumentTick> priceAggregateStream = builder.stream(instrumentPriceInputTopic,Consumed.with(Serdes.String(), new InstrumentListSerde()))
-				.flatMapValues(instruments -> instruments)
+				.flatMapValues(Map::values)
 				.selectKey((key, instrument) -> String.valueOf(instrument.getInstrument_token()));
 		 priceAggregateStream
 		.groupByKey()

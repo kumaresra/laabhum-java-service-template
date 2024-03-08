@@ -13,23 +13,23 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 
-public class InstrumentListSerde implements Serde<List<InstrumentTick>> {
+public class InstrumentListSerde implements Serde<Map<String,InstrumentTick>> {
 
-    JsonSerializer<List<InstrumentTick>> serializer = new JsonSerializer<>();
+    JsonSerializer<Map<String,InstrumentTick>> serializer = new JsonSerializer<>();
 
     @Override
-    public Serializer<List<InstrumentTick>>  serializer() {
+    public Serializer<Map<String,InstrumentTick>>  serializer() {
         return serializer;
     }
 
     @Override
-    public Deserializer<List<InstrumentTick>> deserializer() {
-        return new Deserializer<List<InstrumentTick>>() {
+    public Deserializer<Map<String,InstrumentTick>> deserializer() {
+        return new Deserializer<Map<String,InstrumentTick>>() {
 
             @SneakyThrows
             @Override
-            public List<InstrumentTick> deserialize(String topic, byte[] data) {
-                return getObjectMapper().readValue(data, new TypeReference<List<InstrumentTick>>() {
+            public Map<String,InstrumentTick> deserialize(String topic, byte[] data) {
+                return getObjectMapper().readValue(data, new TypeReference<Map<String,InstrumentTick>>() {
                     @Override
                     public Type getType() {
                         return super.getType();

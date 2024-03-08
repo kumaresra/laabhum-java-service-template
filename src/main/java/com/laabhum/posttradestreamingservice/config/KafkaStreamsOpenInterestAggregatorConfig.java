@@ -1,6 +1,7 @@
 package com.laabhum.posttradestreamingservice.config;
 
 import java.time.*;
+import java.util.Map;
 import java.util.Properties;
 
 import com.laabhum.posttradestreamingservice.constants.Minutes;
@@ -56,31 +57,31 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 
 
 	}
-	@Bean
-	@ConditionalOnProperty(name = "oi.5min", havingValue = "true",matchIfMissing = true)
-	KafkaStreams openInterestkafkaStreams5Minute() {
-		return buildOiStream(Minutes.FIVE);
-	}
-
-	@Bean
-	@ConditionalOnProperty(name = "oi.15min", havingValue = "true",matchIfMissing = true)
-	KafkaStreams openInterestkafkaStreams15Minute() {
-		return buildOiStream(Minutes.FIFTEEN);
-
-
-	}
-	@Bean
-	@ConditionalOnProperty(name = "oi.30min", havingValue = "true", matchIfMissing = true)
-	KafkaStreams openInterestkafkaStreams30Minute() {
-		return buildOiStream(Minutes.THIRTY);
-
-
-	}
-	@Bean
-	@ConditionalOnProperty(name = "oi.60min", havingValue = "true", matchIfMissing = true)
-	KafkaStreams openInterestkafkaStreams60Minute() {
-		return buildOiStream(Minutes.SIXTY);
-	}
+//	@Bean
+//	@ConditionalOnProperty(name = "oi.5min", havingValue = "true",matchIfMissing = true)
+//	KafkaStreams openInterestkafkaStreams5Minute() {
+//		return buildOiStream(Minutes.FIVE);
+//	}
+//
+//	@Bean
+//	@ConditionalOnProperty(name = "oi.15min", havingValue = "true",matchIfMissing = true)
+//	KafkaStreams openInterestkafkaStreams15Minute() {
+//		return buildOiStream(Minutes.FIFTEEN);
+//
+//
+//	}
+//	@Bean
+//	@ConditionalOnProperty(name = "oi.30min", havingValue = "true", matchIfMissing = true)
+//	KafkaStreams openInterestkafkaStreams30Minute() {
+//		return buildOiStream(Minutes.THIRTY);
+//
+//
+//	}
+//	@Bean
+//	@ConditionalOnProperty(name = "oi.60min", havingValue = "true", matchIfMissing = true)
+//	KafkaStreams openInterestkafkaStreams60Minute() {
+//		return buildOiStream(Minutes.SIXTY);
+//	}
 
 	private KafkaStreams buildOiStream(Minutes minutes) {
 
@@ -95,12 +96,12 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 
 
 		KStream<String, GreekAndOiData> openInterestStream = builder.stream(optionGreekSourceTopic,Consumed.with(Serdes.String(), new GreekAndOiDataListSerde()))
-				.flatMapValues(instruments -> instruments)
+				.flatMapValues(Map::values)
 				.selectKey((key, greekAndOiData) ->  String.valueOf(greekAndOiData.getToken()));
 
 
 		KStream<String, InstrumentTick> flattenedPriceStream = builder.stream(instrumentPriceInputTopic,Consumed.with(Serdes.String(), new InstrumentListSerde()))
-				.flatMapValues(instruments -> instruments)
+				.flatMapValues(Map::values)
 				.selectKey((key, instrument) -> generateKeyFromInstrument(instrument));
 
 		KTable<String, InstrumentTick> priceTable = flattenedPriceStream.groupByKey()
@@ -209,7 +210,7 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 		props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
 		props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, new OpenInterestResultSerde().getClass().getName());
 
-		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "oi-change-diff".concat("-").concat(String.valueOf(minutes.getValue())));
+		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "open-in-change-diff".concat("-").concat(String.valueOf(minutes.getValue())));
 
 		//props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, 5);
 		return props;

@@ -14,23 +14,23 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 
-public class GreekAndOiDataListSerde implements Serde<List<GreekAndOiData>> {
+public class GreekAndOiDataListSerde implements Serde<Map<String,GreekAndOiData>> {
 
-    JsonSerializer<List<GreekAndOiData>> serializer = new JsonSerializer<>();
+    JsonSerializer<Map<String,GreekAndOiData>> serializer = new JsonSerializer<>();
 
     @Override
-    public Serializer<List<GreekAndOiData>>  serializer() {
+    public Serializer<Map<String,GreekAndOiData>>  serializer() {
         return serializer;
     }
 
     @Override
-    public Deserializer<List<GreekAndOiData>> deserializer() {
-        return new Deserializer<List<GreekAndOiData>>() {
+    public Deserializer<Map<String,GreekAndOiData>> deserializer() {
+        return new Deserializer<Map<String,GreekAndOiData>>() {
 
             @SneakyThrows
             @Override
-            public List<GreekAndOiData> deserialize(String topic, byte[] data) {
-                return getObjectMapper().readValue(data, new TypeReference<List<GreekAndOiData>>() {
+            public Map<String,GreekAndOiData> deserialize(String topic, byte[] data) {
+                return getObjectMapper().readValue(data, new TypeReference<Map<String,GreekAndOiData>>() {
                     @Override
                     public Type getType() {
                         return super.getType();
