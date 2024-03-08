@@ -95,23 +95,22 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 
 		StreamsBuilder builder = new StreamsBuilder();
 
-		KTable<String, SymbolDetail> symbolTable = builder.stream(symbolDetailTopic,Consumed.with(Serdes.String(), new SymbolListSerde()))
-				.flatMapValues(a->a)
-				.selectKey((key, data) -> data.getInstrumentToken()).peek((key, data) -> log.info("Symbol Detail key {}, data {}",key, data)).toTable();
+		KTable<String, SymbolDetail> symbolTable = builder.stream(symbolDetailTopic, Consumed.with(Serdes.String(), new SymbolListSerde()))
+				.flatMapValues(a -> a)
+				.selectKey((key, data) -> data.getInstrumentToken()).peek((key, data) -> log.info("Symbol Detail key {}, data {}", key, data)).toTable(Named.as("symboldetail"),Materialized.with(Serdes.String(),new SymbolDetailSerde()));
 
 
-
-		KStream<String, GreekAndOiData> openInterestStream = builder.stream(optionGreekSourceTopic,Consumed.with(Serdes.String(), new GreekAndOiDataListSerde()))
+		KStream<String, GreekAndOiData> openInterestStream = builder.stream(optionGreekSourceTopic, Consumed.with(Serdes.String(), new GreekAndOiDataListSerde()))
 				.flatMapValues(Map::values)
-				.selectKey((key, greekAndOiData) ->  String.valueOf(greekAndOiData.getToken()));
+				.selectKey((key, greekAndOiData) -> String.valueOf(greekAndOiData.getToken()));
 
 
 		KStream<String, InstrumentTick> flattenedPriceStream = builder.stream(instrumentPriceInputTopic,Consumed.with(Serdes.String(), new InstrumentListSerde()))
 				.flatMapValues(Map::values)
 				.selectKey((key, instrument) -> String.valueOf(instrument.getInstrumentToken()));
 
-		KTable<String, InstrumentTick> priceTable = flattenedPriceStream.groupByKey()
-				.reduce((oldValue, newValue) -> newValue);
+		KTable<String, InstrumentTick> priceTable = flattenedPriceStream.groupByKey(Grouped.with(Serdes.String(), new InstrumentTickSerde()))
+				.reduce((oldValue, newValue) -> newValue,Materialized.with(Serdes.String(), new InstrumentTickSerde()));
 
 		Supplier<ValueJoiner<GreekAndOiData, InstrumentTick, GreekAndOiData>> oiAndTickJoinerSupplier = () -> (greek, price) -> {
 			if (price != null) {
@@ -228,7 +227,7 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
 		props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
-		props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, new InstrumentTickSerde().getClass().getName());
+		props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
 
 		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "abimanyu".concat("-").concat(String.valueOf(minutes.getValue())));
 
