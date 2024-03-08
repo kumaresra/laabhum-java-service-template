@@ -5,20 +5,20 @@ import lombok.Data;
 @Data
 public class InstrumentOhlc {
 
-	private Instrument openInstrument;
-	private Instrument closeInstrument;
-	private Instrument minInstrument;
-	private Instrument maxInstrument;
+	private InstrumentTick openInstrumentTick;
+	private InstrumentTick closeInstrumentTick;
+	private InstrumentTick minInstrumentTick;
+	private InstrumentTick maxInstrumentTick;
 
 
-	public void add(Instrument data) {
-		if (openInstrument == null) {
-			openInstrument = data;
-			minInstrument = data;
-			maxInstrument = data;    
+	public void add(InstrumentTick data) {
+		if (openInstrumentTick == null) {
+			openInstrumentTick = data;
+			minInstrumentTick = data;
+			maxInstrumentTick = data;
 		}
-		closeInstrument = data;
-		minInstrument= data.getLast_price()< minInstrument.getLast_price()? data:minInstrument;
-		maxInstrument= data.getLast_price()> maxInstrument.getLast_price()? data:maxInstrument;
+		closeInstrumentTick = data;
+		minInstrumentTick = data.getLast_price()< minInstrumentTick.getLast_price()? data: minInstrumentTick;
+		maxInstrumentTick = data.getLast_price()> maxInstrumentTick.getLast_price()? data: maxInstrumentTick;
 	}
 }

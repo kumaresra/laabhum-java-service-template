@@ -5,10 +5,10 @@ import lombok.Data;
 @Data
 public class FirstLastMessage {
 
-    private OptionGreek firstOi;
-    private OptionGreek lastOi;
+    private GreekAndOiData firstOi;
+    private GreekAndOiData lastOi;
 
-    public void add(OptionGreek data) {
+    public void add(GreekAndOiData data) {
         if (firstOi  == null) {
             firstOi = data;
         }

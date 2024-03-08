@@ -1,22 +1,23 @@
 package com.laabhum.posttradestreamingservice.util;
 
+import com.laabhum.posttradestreamingservice.model.SymbolDetail;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serializer;
 
-import com.laabhum.posttradestreamingservice.model.OptionGreek;
+import java.util.Map;
 
-public class OptionGreekSerde implements Serde<OptionGreek> {
+public class SymbolDetailSerde implements Serde<SymbolDetail> {
 
-    JsonSerializer<OptionGreek> serializer = new JsonSerializer<>();
-    JsonDeserializer<OptionGreek> deserializer = new JsonDeserializer<>(OptionGreek.class);
+    JsonSerializer<SymbolDetail> serializer = new JsonSerializer<>();
+    JsonDeserializer<SymbolDetail> deserializer = new JsonDeserializer<>(SymbolDetail.class);
     @Override
-    public Serializer<OptionGreek> serializer() {
+    public Serializer<SymbolDetail> serializer() {
         return serializer;
     }
 
     @Override
-    public Deserializer<OptionGreek> deserializer() {
+    public Deserializer<SymbolDetail> deserializer() {
         return deserializer;
     }
 

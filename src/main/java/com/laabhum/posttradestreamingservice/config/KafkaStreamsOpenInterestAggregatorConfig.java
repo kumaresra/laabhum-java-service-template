@@ -28,13 +28,15 @@ import static org.apache.kafka.streams.StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_C
 @EnableKafka
 public class KafkaStreamsOpenInterestAggregatorConfig {
 
-	@Value("${laabhum.topic.price.input:topic_price_from_broker_stream}")
+	@Value("${laabhum.topic.symbol.input:topic_symbol_from_broker_stream}")
+	private String symbolDetailTopic;
+	@Value("${laabhum.topic.price.input:topic_ticks_from_broker}")
 	private String instrumentPriceInputTopic;
 
 	@Value("${spring.kafka.bootstrap-servers:localhost:9092}")
 	private String brokers;
 
-	@Value("${laabhum.topic.oi.input:topic_oi_from_broker_stream}")
+	@Value("${laabhum.topic.oi.input:topic_greeks_from_broker}")
 	private String optionGreekSourceTopic;
 
 	@Value("${laabhum.topic.oi.output.prefix:topic_oi_change_diff}")
@@ -82,12 +84,27 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 		CustomMinutesWindow slidingWindow =  new CustomMinutesWindow(zoneId, minutes);// 1 minute
 
 		StreamsBuilder builder = new StreamsBuilder();
-		KTable<String, Instrument> priceTable = builder.table(instrumentPriceInputTopic,Consumed.with(Serdes.String(), new InstrumentSerde()));
-		KStream<String, OptionGreek> openInterestStream = builder.stream(optionGreekSourceTopic, Consumed.with(Serdes.String(), new OptionGreekSerde()));
+
+		KTable<String, SymbolDetail> symbolTable = builder.table(symbolDetailTopic,Consumed.with(Serdes.String(), new SymbolDetailSerde()));
+
+
+		KStream<String, GreekAndOiData> openInterestStream = builder.stream(optionGreekSourceTopic,Consumed.with(Serdes.String(), new GreekAndOiDataListSerde()))
+				.flatMapValues(instruments -> instruments)
+				.selectKey((key, greekAndOiData) ->  String.valueOf(greekAndOiData.getToken()));
+
+
+		KStream<String, InstrumentTick> flattenedPriceStream = builder.stream(instrumentPriceInputTopic,Consumed.with(Serdes.String(), new InstrumentListSerde()))
+				.flatMapValues(instruments -> instruments)
+				.selectKey((key, instrument) -> generateKeyFromInstrument(instrument));
+
+		KTable<String, InstrumentTick> priceTable = flattenedPriceStream.groupByKey()
+				.reduce((oldValue, newValue) -> newValue);
+
 		openInterestStream.leftJoin(priceTable, (greek, price) -> {
-			greek.setPrice(price.getLast_price());
-			return greek;
-		}, Joined.with(Serdes.String(), new OptionGreekSerde(), new InstrumentSerde()))
+					greek.setLastPrice(price.getLast_price());
+					greek.setVolume(price.getVolume_traded());
+			   return greek;
+		}, Joined.with(Serdes.String(), new GreekAndOiDataSerde(), new InstrumentSerde()))
 		.groupByKey()
 		.windowedBy(slidingWindow)
 		.aggregate(
@@ -100,8 +117,8 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 				).suppress(Suppressed.untilWindowCloses(Suppressed.BufferConfig.unbounded()))
 		.toStream()
 		.map((key, value) -> {
-			double priceChange = value.getLastOi().getPrice() - value.getFirstOi().getPrice();
-			int oiChange = value.getLastOi().getOi() - value.getFirstOi().getOi();
+			double priceChange = value.getLastOi().getLastPrice() - value.getFirstOi().getLastPrice();
+			int oiChange = value.getLastOi().getOpenInterest() - value.getFirstOi().getOpenInterest();
 			OpenInterestResult openInterestResult = new  OpenInterestResult(
 					getFormattedDate(key.window().start(), zoneId),
 					getFormattedDate(key.window().end(), zoneId),
@@ -109,16 +126,24 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 					key.key(),
 					oiChange,
 					value.getFirstOi().getToken(),
-					value.getFirstOi().getOi(),
-					value.getFirstOi().getPrice(),
-					value.getLastOi().getOi(),
-					value.getLastOi().getPrice(),
+					value.getFirstOi().getOpenInterest(),
+					value.getFirstOi().getLastPrice(),
+					 value.getLastOi().getOpenInterest(),
+					 value.getLastOi().getLastPrice(),
 					priceChange,
-					findOiInterpretation(priceChange,oiChange).name(),
-					findOiSentiment(priceChange,oiChange)
+					 findOiInterpretation(priceChange,oiChange).name(),
+					findOiSentiment(priceChange,oiChange),
+					"","","","",0, value.getLastOi().getVolume()
 					);
 			return KeyValue.pair(key.key(), openInterestResult);
-		})
+		}).leftJoin(symbolTable,(openInterestResult, symbol) -> {
+					openInterestResult.setExchange(symbol.getExchange());
+					openInterestResult.setName(symbol.getName());
+					openInterestResult.setExpiry(symbol.getExpiry());
+					openInterestResult.setStrike(symbol.getStrike());
+					openInterestResult.setInstrumentType(symbol.getInstrumentType());
+					return openInterestResult;
+				}, Joined.with(Serdes.String(), new OpenInterestResultSerde(), new SymbolDetailSerde()))
 		.to(getOutputTopic(minutes), Produced.<String, OpenInterestResult>with(Serdes.String(), new OpenInterestResultSerde())); // Send output to another topic
 
 		KafkaStreams streams = new KafkaStreams(builder.build(), props);
@@ -127,6 +152,9 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 		return streams;
 	}
 
+	private String generateKeyFromInstrument(InstrumentTick instrumentTick) {
+		return String.valueOf(instrumentTick.getInstrument_token());
+	}
 
 
 	private String findOiSentiment(double priceChange, int oiChange) {

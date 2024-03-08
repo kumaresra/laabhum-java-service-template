@@ -1,5 +1,6 @@
 package com.laabhum.posttradestreamingservice.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -19,4 +20,10 @@ public class OpenInterestResult {
     private Double priceChange;
     private String oiInterpretation;
     private String oiSentiment;
+   private String exchange;
+    private String expiry;
+ private String instrumentType;
+ private String name;
+private int strike;
+private long volume;
 }

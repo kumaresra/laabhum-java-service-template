@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class Instrument {
+public class InstrumentTick {
 	private boolean tradable;
 	private String mode;
 	private int instrument_token;

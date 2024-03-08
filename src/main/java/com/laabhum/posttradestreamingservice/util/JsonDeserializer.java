@@ -16,16 +16,13 @@ public class JsonDeserializer<T> implements Deserializer<T> {
         obj.registerModule(new JavaTimeModule());
         return obj;
     }
-    private Class<T> destinationClass;
-    private Type reflectionTypeToken;
+    private final Class<T> destinationClass;
 
     public JsonDeserializer(Class<T> destinationClass) {
         this.destinationClass = destinationClass;
     }
 
-    public JsonDeserializer(Type reflectionTypeToken) {
-        this.reflectionTypeToken = reflectionTypeToken;
-    }
+
 
     @Override
     public void configure(Map<String, ?> props, boolean isKey) {

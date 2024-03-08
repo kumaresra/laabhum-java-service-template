@@ -1,23 +1,24 @@
 package com.laabhum.posttradestreamingservice.util;
 
+import com.laabhum.posttradestreamingservice.model.GreekAndOiData;
 import com.laabhum.posttradestreamingservice.model.InstrumentTick;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serializer;
 
-import com.laabhum.posttradestreamingservice.model.Instrument;
+import java.util.Map;
 
-public class InstrumentSerde implements Serde<InstrumentTick> {
+public class GreekAndOiDataSerde implements Serde<GreekAndOiData> {
 
-    JsonSerializer<InstrumentTick> serializer = new JsonSerializer<>();
-    JsonDeserializer<InstrumentTick> deserializer = new JsonDeserializer<>(InstrumentTick.class);
+    JsonSerializer<GreekAndOiData> serializer = new JsonSerializer<>();
+    JsonDeserializer<GreekAndOiData> deserializer = new JsonDeserializer<>(GreekAndOiData.class);
     @Override
-    public Serializer<InstrumentTick> serializer() {
+    public Serializer<GreekAndOiData> serializer() {
         return serializer;
     }
 
     @Override
-    public Deserializer<InstrumentTick> deserializer() {
+    public Deserializer<GreekAndOiData> deserializer() {
         return deserializer;
     }
 

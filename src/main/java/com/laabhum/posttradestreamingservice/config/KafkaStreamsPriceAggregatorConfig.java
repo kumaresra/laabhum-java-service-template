@@ -25,11 +25,11 @@ import org.springframework.context.annotation.Configuration;
 
 import com.laabhum.posttradestreamingservice.constants.Minutes;
 import com.laabhum.posttradestreamingservice.helper.CustomMinutesWindow;
-import com.laabhum.posttradestreamingservice.model.Instrument;
+import com.laabhum.posttradestreamingservice.model.InstrumentTick;
 import com.laabhum.posttradestreamingservice.model.InstrumentOhlc;
 import com.laabhum.posttradestreamingservice.model.Tick;
 import com.laabhum.posttradestreamingservice.util.InstrumentOhlcSerde;
-import com.laabhum.posttradestreamingservice.util.InstrumentSerde;
+import com.laabhum.posttradestreamingservice.util.InstrumentListSerde;
 import com.laabhum.posttradestreamingservice.util.TickSerde;
 
 
@@ -94,7 +94,7 @@ public class KafkaStreamsPriceAggregatorConfig {
 		CustomMinutesWindow slidingWindow =  new CustomMinutesWindow(zoneId, minutes);// 1 minute
 
 		StreamsBuilder builder = new StreamsBuilder();
-		KStream<String, Instrument> priceAggregateStream = builder.stream(instrumentPriceInputTopic, Consumed.with(Serdes.String(), new InstrumentSerde()));
+		KStream<String, InstrumentTick> priceAggregateStream = builder.stream(instrumentPriceInputTopic, Consumed.with(Serdes.String(), new InstrumentListSerde()));
 		priceAggregateStream
 		.groupByKey()
 		.windowedBy(slidingWindow)
@@ -113,12 +113,12 @@ public class KafkaStreamsPriceAggregatorConfig {
 					getFormattedDate(key.window().end(), zoneId),
 					Duration.between(Instant.ofEpochSecond(key.window().start()),Instant.ofEpochSecond(key.window().end())).toMinutes(),
 					key.key(),
-					value.getCloseInstrument().getLast_price() - value.getOpenInstrument().getLast_price(),
-					value.getOpenInstrument().getInstrument_token(),
-					value.getOpenInstrument().getLast_price(),
-					value.getCloseInstrument().getLast_price(),
-					value.getMinInstrument().getLast_price(),
-					value.getMaxInstrument().getLast_price()
+					value.getCloseInstrumentTick().getLast_price() - value.getOpenInstrumentTick().getLast_price(),
+					value.getOpenInstrumentTick().getInstrument_token(),
+					value.getOpenInstrumentTick().getLast_price(),
+					value.getCloseInstrumentTick().getLast_price(),
+					value.getMinInstrumentTick().getLast_price(),
+					value.getMaxInstrumentTick().getLast_price()
 					);
 			return KeyValue.pair(key.key(), openInterestResult);
 		})
