@@ -94,10 +94,9 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 		StreamsBuilder builder = new StreamsBuilder();
 
 		KTable<String, SymbolDetail> symbolTable = builder.stream(symbolDetailTopic,Consumed.with(Serdes.String(), new SymbolListSerde()))
-				.peek((a,b)->log.info("symbol {}", (long) b.size()))
+				.peek((a,b)->log.info("symbol {}", b))
 				.flatMapValues(a->a)
-
-				.selectKey((key, data) ->  String.valueOf(data.getInstrumentToken())).toTable();
+				.selectKey((key, data) ->   data.getInstrumentToken()).peek((a,b)->log.info("after synbol {} ,{}",a, b)).toTable();
 
 
 
@@ -113,51 +112,59 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 		KTable<String, InstrumentTick> priceTable = flattenedPriceStream.groupByKey()
 				.reduce((oldValue, newValue) -> newValue);
 
-		openInterestStream.leftJoin(priceTable, (greek, price) -> {
-					greek.setLastPrice(price.getLast_price());
-					greek.setVolume(price.getVolume_traded());
-			   return greek;
-		}, Joined.with(Serdes.String(), new GreekAndOiDataSerde(), new InstrumentSerde()))
-		.groupByKey()
-		.windowedBy(slidingWindow)
-		.aggregate(
-				FirstLastMessage::new, // initializer
-				(key, value, aggregate) -> { // aggregator
-					aggregate.add(value);
-					return aggregate;
-				},
-				Materialized.with(Serdes.String(), new FirstLastMessageSerde())
+		KStream<String, OpenInterestResult> resultStream = openInterestStream.leftJoin(priceTable, (greek, price) -> {
+					log.info("oi left join {}, {}", greek, price);
+					if (price != null) {
+						greek.setLastPrice(price.getLast_price());
+						greek.setVolume(price.getVolume_traded());
+					}
+
+					return greek;
+				}, Joined.with(Serdes.String(), new GreekAndOiDataSerde(), new InstrumentTickSerde()))
+				.groupByKey()
+				.windowedBy(slidingWindow)
+				.aggregate(
+						FirstLastMessage::new, // initializer
+						(key, value, aggregate) -> { // aggregator
+							aggregate.add(value);
+							return aggregate;
+						},
+						Materialized.with(Serdes.String(), new FirstLastMessageSerde())
 				).suppress(Suppressed.untilWindowCloses(Suppressed.BufferConfig.unbounded()))
-		.toStream()
-		.map((key, value) -> {
-			double priceChange = value.getLastOi().getLastPrice() - value.getFirstOi().getLastPrice();
-			int oiChange = value.getLastOi().getOpenInterest() - value.getFirstOi().getOpenInterest();
-			OpenInterestResult openInterestResult = new  OpenInterestResult(
-					getFormattedDate(key.window().start(), zoneId),
-					getFormattedDate(key.window().end(), zoneId),
-					Duration.between(Instant.ofEpochSecond(key.window().start()),Instant.ofEpochSecond(key.window().end())).toMinutes(),
-					key.key(),
-					oiChange,
-					value.getFirstOi().getToken(),
-					value.getFirstOi().getOpenInterest(),
-					value.getFirstOi().getLastPrice(),
-					 value.getLastOi().getOpenInterest(),
-					 value.getLastOi().getLastPrice(),
-					priceChange,
-					 findOiInterpretation(priceChange,oiChange).name(),
-					findOiSentiment(priceChange,oiChange),
-					"","","","",0, value.getLastOi().getVolume()
+				.toStream()
+				.map((key, value) -> {
+					double priceChange = value.getLastOi().getLastPrice() - value.getFirstOi().getLastPrice();
+					int oiChange = value.getLastOi().getOpenInterest() - value.getFirstOi().getOpenInterest();
+					OpenInterestResult openInterestResult = new OpenInterestResult(
+							getFormattedDate(key.window().start(), zoneId),
+							getFormattedDate(key.window().end(), zoneId),
+							Duration.between(Instant.ofEpochSecond(key.window().start()), Instant.ofEpochSecond(key.window().end())).toMinutes(),
+							key.key(),
+							oiChange,
+							value.getFirstOi().getToken(),
+							value.getFirstOi().getOpenInterest(),
+							value.getFirstOi().getLastPrice(),
+							value.getLastOi().getOpenInterest(),
+							value.getLastOi().getLastPrice(),
+							priceChange,
+							findOiInterpretation(priceChange, oiChange).name(),
+							findOiSentiment(priceChange, oiChange),
+							"", "", "", "", 0, value.getLastOi().getVolume()
 					);
-			return KeyValue.pair(key.key(), openInterestResult);
-		}).leftJoin(symbolTable,(openInterestResult, symbol) -> {
-					openInterestResult.setExchange(symbol.getExchange());
-					openInterestResult.setName(symbol.getName());
-					openInterestResult.setExpiry(symbol.getExpiry());
-					openInterestResult.setStrike(symbol.getStrike());
-					openInterestResult.setInstrumentType(symbol.getInstrumentType());
-					return openInterestResult;
-				}, Joined.with(Serdes.String(), new OpenInterestResultSerde(), new SymbolDetailSerde()))
-		.to(getOutputTopic(minutes), Produced.<String, OpenInterestResult>with(Serdes.String(), new OpenInterestResultSerde())); // Send output to another topic
+					return KeyValue.pair(key.key(), openInterestResult);
+				});
+
+		KStream<String, OpenInterestResult> oiAndSymbolJoinedStream = resultStream.leftJoin(symbolTable, (openInterestResult, symbol) -> {
+			openInterestResult.setExchange(symbol.getExchange());
+			openInterestResult.setName(symbol.getName());
+			openInterestResult.setExpiry(symbol.getExpiry());
+			openInterestResult.setStrike(symbol.getStrike());
+			openInterestResult.setInstrumentType(symbol.getInstrumentType());
+			return openInterestResult;
+		}, Joined.with(Serdes.String(), new OpenInterestResultSerde(), new SymbolDetailSerde()));
+
+
+		oiAndSymbolJoinedStream.to(getOutputTopic(minutes), Produced.<String, OpenInterestResult>with(Serdes.String(), new OpenInterestResultSerde())); // Send output to another topic
 
 		KafkaStreams streams = new KafkaStreams(builder.build(), props);
 		streams.start();
@@ -166,6 +173,7 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 	}
 
 	private String generateKeyFromInstrument(InstrumentTick instrumentTick) {
+		log.info("generateKeyFromInstrument {}",instrumentTick.getInstrument_token());
 		return String.valueOf(instrumentTick.getInstrument_token());
 	}
 
@@ -216,7 +224,7 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 		props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
 		props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, new OpenInterestResultSerde().getClass().getName());
 
-		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "open-interesttest-change".concat("-").concat(String.valueOf(minutes.getValue())));
+		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "abimanyu".concat("-").concat(String.valueOf(minutes.getValue())));
 
 		//props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, 5);
 		return props;

@@ -8,7 +8,7 @@ import org.apache.kafka.common.serialization.Serializer;
 import java.util.Map;
 
 
-public class InstrumentSerde implements Serde<InstrumentTick> {
+public class InstrumentTickSerde implements Serde<InstrumentTick> {
 
     JsonSerializer<InstrumentTick> serializer = new JsonSerializer<>();
     JsonDeserializer<InstrumentTick> deserializer = new JsonDeserializer<>(InstrumentTick.class);

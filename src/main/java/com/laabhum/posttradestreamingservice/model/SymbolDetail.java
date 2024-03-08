@@ -10,13 +10,13 @@ public class SymbolDetail {
 
 
     @JsonProperty("instrument_token")
-    private long instrumentToken;
+    private String instrumentToken;
 
     @JsonProperty("exchange")
     private String exchange;
 
     @JsonProperty("exchange_token")
-    private int exchangeToken;
+    private String exchangeToken;
 
     @JsonProperty("expiry")
     private String expiry;
