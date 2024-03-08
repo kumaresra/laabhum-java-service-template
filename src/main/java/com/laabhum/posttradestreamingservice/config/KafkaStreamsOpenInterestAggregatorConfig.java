@@ -1,6 +1,7 @@
 package com.laabhum.posttradestreamingservice.config;
 
 import java.time.*;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Supplier;
@@ -59,31 +60,31 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 
 
 	}
-//	@Bean
-//	@ConditionalOnProperty(name = "oi.5min", havingValue = "true",matchIfMissing = true)
-//	KafkaStreams openInterestkafkaStreams5Minute() {
-//		return buildOiStream(Minutes.FIVE);
-//	}
-//
-//	@Bean
-//	@ConditionalOnProperty(name = "oi.15min", havingValue = "true",matchIfMissing = true)
-//	KafkaStreams openInterestkafkaStreams15Minute() {
-//		return buildOiStream(Minutes.FIFTEEN);
-//
-//
-//	}
-//	@Bean
-//	@ConditionalOnProperty(name = "oi.30min", havingValue = "true", matchIfMissing = true)
-//	KafkaStreams openInterestkafkaStreams30Minute() {
-//		return buildOiStream(Minutes.THIRTY);
-//
-//
-//	}
-//	@Bean
-//	@ConditionalOnProperty(name = "oi.60min", havingValue = "true", matchIfMissing = true)
-//	KafkaStreams openInterestkafkaStreams60Minute() {
-//		return buildOiStream(Minutes.SIXTY);
-//	}
+	@Bean
+	@ConditionalOnProperty(name = "oi.5min", havingValue = "true",matchIfMissing = true)
+	KafkaStreams openInterestkafkaStreams5Minute() {
+		return buildOiStream(Minutes.FIVE);
+	}
+
+	@Bean
+	@ConditionalOnProperty(name = "oi.15min", havingValue = "true",matchIfMissing = true)
+	KafkaStreams openInterestkafkaStreams15Minute() {
+		return buildOiStream(Minutes.FIFTEEN);
+
+
+	}
+	@Bean
+	@ConditionalOnProperty(name = "oi.30min", havingValue = "true", matchIfMissing = true)
+	KafkaStreams openInterestkafkaStreams30Minute() {
+		return buildOiStream(Minutes.THIRTY);
+
+
+	}
+	@Bean
+	@ConditionalOnProperty(name = "oi.60min", havingValue = "true", matchIfMissing = true)
+	KafkaStreams openInterestkafkaStreams60Minute() {
+		return buildOiStream(Minutes.SIXTY);
+	}
 
 	private KafkaStreams buildOiStream(Minutes minutes) {
 
@@ -95,9 +96,8 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 		StreamsBuilder builder = new StreamsBuilder();
 
 		KTable<String, SymbolDetail> symbolTable = builder.stream(symbolDetailTopic,Consumed.with(Serdes.String(), new SymbolListSerde()))
-				.peek((a,b)->log.info("symbol {}", b))
 				.flatMapValues(a->a)
-				.selectKey((key, data) ->   data.getInstrumentToken()).peek((a,b)->log.info("after synbol {} ,{}",a, b)).toTable();
+				.selectKey((key, data) -> data.getInstrumentToken()).peek((key, data) -> log.info("Symbol Detail key {}, data {}",key, data)).toTable();
 
 
 
@@ -108,13 +108,12 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 
 		KStream<String, InstrumentTick> flattenedPriceStream = builder.stream(instrumentPriceInputTopic,Consumed.with(Serdes.String(), new InstrumentListSerde()))
 				.flatMapValues(Map::values)
-				.selectKey((key, instrument) -> generateKeyFromInstrument(instrument));
+				.selectKey((key, instrument) -> String.valueOf(instrument.getInstrumentToken()));
 
 		KTable<String, InstrumentTick> priceTable = flattenedPriceStream.groupByKey()
 				.reduce((oldValue, newValue) -> newValue);
 
 		Supplier<ValueJoiner<GreekAndOiData, InstrumentTick, GreekAndOiData>> oiAndTickJoinerSupplier = () -> (greek, price) -> {
-
 			if (price != null) {
 				greek.setLastPrice(price.getLastPrice());
 				greek.setVolume(price.getVolumeTraded());
@@ -159,6 +158,7 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 
 		KStream<String, OpenInterestResult> oiAndSymbolJoinedStream = windowingStream.leftJoin(symbolTable, (openInterestResult, symbol) -> {
 			if(symbol == null ){
+				log.info("Symbol detail doesnt exist {}", openInterestResult.getKey());
 				return openInterestResult;
 			}
 			openInterestResult.setExchange(symbol.getExchange());
@@ -182,10 +182,7 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 		oiAndSymbolJoinedStream.to(getOutputTopic(minutes), Produced.<String, OpenInterestResult>with(Serdes.String(), new OpenInterestResultSerde()));
 	}
 
-	private String generateKeyFromInstrument(InstrumentTick instrumentTick) {
-		return String.valueOf(instrumentTick.getInstrumentToken());
-	}
-
+ 
 
 	private String findOiSentiment(double priceChange, int oiChange) {
 		if (priceChange > 0 && oiChange > 0) {
