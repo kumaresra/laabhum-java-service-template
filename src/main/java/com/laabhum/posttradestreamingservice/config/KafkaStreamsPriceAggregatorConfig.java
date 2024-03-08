@@ -20,6 +20,7 @@ import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.Suppressed;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -100,8 +101,10 @@ public class KafkaStreamsPriceAggregatorConfig {
 		CustomMinutesWindow slidingWindow =  new CustomMinutesWindow(zoneId, minutes);// 1 minute
 
 		StreamsBuilder builder = new StreamsBuilder();
-		KStream<String, InstrumentTick> priceAggregateStream = builder.stream(instrumentPriceInputTopic, Consumed.with(Serdes.String(), new InstrumentListSerde()));
-		priceAggregateStream
+		KStream<String, InstrumentTick> priceAggregateStream = builder.stream(instrumentPriceInputTopic,Consumed.with(Serdes.String(), new InstrumentListSerde()))
+				.flatMapValues(instruments -> instruments)
+				.selectKey((key, instrument) -> String.valueOf(instrument.getInstrument_token()));
+		 priceAggregateStream
 		.groupByKey()
 		.windowedBy(slidingWindow)
 		.aggregate(

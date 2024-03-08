@@ -5,7 +5,7 @@ import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serializer;
 
-import com.laabhum.posttradestreamingservice.model.FirstLastMessage;
+import java.util.Map;
 
 public class FirstLastMessageSerde implements Serde<FirstLastMessage> {
 

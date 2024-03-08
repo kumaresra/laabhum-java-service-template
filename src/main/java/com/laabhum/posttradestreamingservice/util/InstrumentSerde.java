@@ -5,7 +5,8 @@ import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serializer;
 
-import com.laabhum.posttradestreamingservice.model.Instrument;
+import java.util.Map;
+
 
 public class InstrumentSerde implements Serde<InstrumentTick> {
 
