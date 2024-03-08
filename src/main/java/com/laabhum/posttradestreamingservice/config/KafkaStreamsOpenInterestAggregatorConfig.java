@@ -92,7 +92,10 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 
 		StreamsBuilder builder = new StreamsBuilder();
 
-		KTable<String, SymbolDetail> symbolTable = builder.table(symbolDetailTopic,Consumed.with(Serdes.String(), new SymbolDetailSerde()));
+		KTable<String, SymbolDetail> symbolTable = builder.stream(symbolDetailTopic,Consumed.with(Serdes.String(), new SymbolListSerde()))
+				.flatMapValues(a->a)
+				.selectKey((key, data) ->  String.valueOf(data.getInstrumentToken())).toTable();
+
 
 
 		KStream<String, GreekAndOiData> openInterestStream = builder.stream(optionGreekSourceTopic,Consumed.with(Serdes.String(), new GreekAndOiDataListSerde()))
