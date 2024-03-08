@@ -9,6 +9,7 @@ import com.laabhum.posttradestreamingservice.constants.OiInterpretation;
 import com.laabhum.posttradestreamingservice.helper.CustomMinutesWindow;
 import com.laabhum.posttradestreamingservice.model.*;
 import com.laabhum.posttradestreamingservice.util.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
@@ -25,7 +26,7 @@ import org.springframework.kafka.annotation.EnableKafka;
 import static com.laabhum.posttradestreamingservice.util.Utils.getFormattedDate;
 import static org.apache.kafka.streams.StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG;
 
-
+@Slf4j
 @Configuration
 @EnableKafka
 public class KafkaStreamsOpenInterestAggregatorConfig {
@@ -93,7 +94,9 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 		StreamsBuilder builder = new StreamsBuilder();
 
 		KTable<String, SymbolDetail> symbolTable = builder.stream(symbolDetailTopic,Consumed.with(Serdes.String(), new SymbolListSerde()))
+				.peek((a,b)->log.info("symbol {}", (long) b.size()))
 				.flatMapValues(a->a)
+
 				.selectKey((key, data) ->  String.valueOf(data.getInstrumentToken())).toTable();
 
 
@@ -208,12 +211,12 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 
 		props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
 
-		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
 		props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
 		props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, new OpenInterestResultSerde().getClass().getName());
 
-		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "open-in-change-diff".concat("-").concat(String.valueOf(minutes.getValue())));
+		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "open-interesttest-change".concat("-").concat(String.valueOf(minutes.getValue())));
 
 		//props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, 5);
 		return props;
