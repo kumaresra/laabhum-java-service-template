@@ -3,6 +3,7 @@ package com.laabhum.posttradestreamingservice.config;
 import java.time.*;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Supplier;
 
 import com.laabhum.posttradestreamingservice.constants.Minutes;
 import com.laabhum.posttradestreamingservice.constants.OiInterpretation;
@@ -112,15 +113,17 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 		KTable<String, InstrumentTick> priceTable = flattenedPriceStream.groupByKey()
 				.reduce((oldValue, newValue) -> newValue);
 
-		KStream<String, OpenInterestResult> resultStream = openInterestStream.leftJoin(priceTable, (greek, price) -> {
-					log.info("oi left join {}, {}", greek, price);
-					if (price != null) {
-						greek.setLastPrice(price.getLast_price());
-						greek.setVolume(price.getVolume_traded());
-					}
+		Supplier<ValueJoiner<GreekAndOiData, InstrumentTick, GreekAndOiData>> oiAndTickJoinerSupplier = () -> (greek, price) -> {
 
-					return greek;
-				}, Joined.with(Serdes.String(), new GreekAndOiDataSerde(), new InstrumentTickSerde()))
+			if (price != null) {
+				greek.setLastPrice(price.getLastPrice());
+				greek.setVolume(price.getVolumeTraded());
+			}
+			return greek;
+		};
+		KStream<String, GreekAndOiData> leftJoiOiAndPriceStream = openInterestStream.leftJoin(priceTable, oiAndTickJoinerSupplier.get(), Joined.with(Serdes.String(), new GreekAndOiDataSerde(), new InstrumentTickSerde()));
+
+		KStream<String, OpenInterestResult> windowingStream = leftJoiOiAndPriceStream
 				.groupByKey()
 				.windowedBy(slidingWindow)
 				.aggregate(
@@ -154,7 +157,10 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 					return KeyValue.pair(key.key(), openInterestResult);
 				});
 
-		KStream<String, OpenInterestResult> oiAndSymbolJoinedStream = resultStream.leftJoin(symbolTable, (openInterestResult, symbol) -> {
+		KStream<String, OpenInterestResult> oiAndSymbolJoinedStream = windowingStream.leftJoin(symbolTable, (openInterestResult, symbol) -> {
+			if(symbol == null ){
+				return openInterestResult;
+			}
 			openInterestResult.setExchange(symbol.getExchange());
 			openInterestResult.setName(symbol.getName());
 			openInterestResult.setExpiry(symbol.getExpiry());
@@ -164,7 +170,7 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 		}, Joined.with(Serdes.String(), new OpenInterestResultSerde(), new SymbolDetailSerde()));
 
 
-		oiAndSymbolJoinedStream.to(getOutputTopic(minutes), Produced.<String, OpenInterestResult>with(Serdes.String(), new OpenInterestResultSerde())); // Send output to another topic
+		writeOutputToTopic(minutes, oiAndSymbolJoinedStream); // Send output to another topic
 
 		KafkaStreams streams = new KafkaStreams(builder.build(), props);
 		streams.start();
@@ -172,9 +178,12 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 		return streams;
 	}
 
+	private void writeOutputToTopic(Minutes minutes, KStream<String, OpenInterestResult> oiAndSymbolJoinedStream) {
+		oiAndSymbolJoinedStream.to(getOutputTopic(minutes), Produced.<String, OpenInterestResult>with(Serdes.String(), new OpenInterestResultSerde()));
+	}
+
 	private String generateKeyFromInstrument(InstrumentTick instrumentTick) {
-		log.info("generateKeyFromInstrument {}",instrumentTick.getInstrument_token());
-		return String.valueOf(instrumentTick.getInstrument_token());
+		return String.valueOf(instrumentTick.getInstrumentToken());
 	}
 
 
@@ -222,7 +231,7 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
 		props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
-		props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, new OpenInterestResultSerde().getClass().getName());
+		props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, new InstrumentTickSerde().getClass().getName());
 
 		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "abimanyu".concat("-").concat(String.valueOf(minutes.getValue())));
 

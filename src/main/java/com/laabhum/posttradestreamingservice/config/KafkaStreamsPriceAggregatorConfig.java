@@ -103,7 +103,7 @@ public class KafkaStreamsPriceAggregatorConfig {
 		StreamsBuilder builder = new StreamsBuilder();
 		KStream<String, InstrumentTick> priceAggregateStream = builder.stream(instrumentPriceInputTopic,Consumed.with(Serdes.String(), new InstrumentListSerde()))
 				.flatMapValues(Map::values)
-				.selectKey((key, instrument) -> String.valueOf(instrument.getInstrument_token()));
+				.selectKey((key, instrument) -> String.valueOf(instrument.getInstrumentToken()));
 		 priceAggregateStream
 		.groupByKey()
 		.windowedBy(slidingWindow)
@@ -122,12 +122,12 @@ public class KafkaStreamsPriceAggregatorConfig {
 					getFormattedDate(key.window().end(), zoneId),
 					Duration.between(Instant.ofEpochSecond(key.window().start()),Instant.ofEpochSecond(key.window().end())).toMinutes(),
 					key.key(),
-					value.getCloseInstrumentTick().getLast_price() - value.getOpenInstrumentTick().getLast_price(),
-					value.getOpenInstrumentTick().getInstrument_token(),
-					value.getOpenInstrumentTick().getLast_price(),
-					value.getCloseInstrumentTick().getLast_price(),
-					value.getMinInstrumentTick().getLast_price(),
-					value.getMaxInstrumentTick().getLast_price()
+					value.getCloseInstrumentTick().getLastPrice() - value.getOpenInstrumentTick().getLastPrice(),
+					value.getOpenInstrumentTick().getInstrumentToken(),
+					value.getOpenInstrumentTick().getLastPrice(),
+					value.getCloseInstrumentTick().getLastPrice(),
+					value.getMinInstrumentTick().getLastPrice(),
+					value.getMaxInstrumentTick().getLastPrice()
 					);
 			return KeyValue.pair(key.key(), openInterestResult);
 		})

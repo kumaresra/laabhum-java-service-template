@@ -18,7 +18,7 @@ public class InstrumentOhlc {
 			maxInstrumentTick = data;
 		}
 		closeInstrumentTick = data;
-		minInstrumentTick = data.getLast_price()< minInstrumentTick.getLast_price()? data: minInstrumentTick;
-		maxInstrumentTick = data.getLast_price()> maxInstrumentTick.getLast_price()? data: maxInstrumentTick;
+		minInstrumentTick = data.getLastPrice()< minInstrumentTick.getLastPrice()? data: minInstrumentTick;
+		maxInstrumentTick = data.getLastPrice()> maxInstrumentTick.getLastPrice()? data: maxInstrumentTick;
 	}
 }

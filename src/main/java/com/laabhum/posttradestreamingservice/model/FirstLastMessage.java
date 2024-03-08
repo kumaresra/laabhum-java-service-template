@@ -12,7 +12,6 @@ public class FirstLastMessage {
 
     public void add(GreekAndOiData data) {
         if (firstOi  == null) {
-            log.info("firstoi added");
             firstOi = data;
         }
         lastOi = data;
