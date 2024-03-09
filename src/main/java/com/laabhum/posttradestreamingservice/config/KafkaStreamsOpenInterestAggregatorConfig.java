@@ -52,39 +52,39 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 
 
 
-//
-//	@Bean
-//	@ConditionalOnProperty(name = "oi.1min", havingValue = "true",matchIfMissing = true)
-//	KafkaStreams openInterestkafkaStreams1Minute() {
-//		return buildOiStream(Minutes.ONE);
-//
-//
-//	}
-//	@Bean
-//	@ConditionalOnProperty(name = "oi.5min", havingValue = "true",matchIfMissing = true)
-//	KafkaStreams openInterestkafkaStreams5Minute() {
-//		return buildOiStream(Minutes.FIVE);
-//	}
-//
-//	@Bean
-//	@ConditionalOnProperty(name = "oi.15min", havingValue = "true",matchIfMissing = true)
-//	KafkaStreams openInterestkafkaStreams15Minute() {
-//		return buildOiStream(Minutes.FIFTEEN);
-//
-//
-//	}
-//	@Bean
-//	@ConditionalOnProperty(name = "oi.30min", havingValue = "true", matchIfMissing = true)
-//	KafkaStreams openInterestkafkaStreams30Minute() {
-//		return buildOiStream(Minutes.THIRTY);
-//
-//
-//	}
-//	@Bean
-//	@ConditionalOnProperty(name = "oi.60min", havingValue = "true", matchIfMissing = true)
-//	KafkaStreams openInterestkafkaStreams60Minute() {
-//		return buildOiStream(Minutes.SIXTY);
-//	}
+
+	@Bean
+	@ConditionalOnProperty(name = "oi.1min", havingValue = "true",matchIfMissing = true)
+	KafkaStreams openInterestkafkaStreams1Minute() {
+		return buildOiStream(Minutes.ONE);
+
+
+	}
+	@Bean
+	@ConditionalOnProperty(name = "oi.5min", havingValue = "true",matchIfMissing = true)
+	KafkaStreams openInterestkafkaStreams5Minute() {
+		return buildOiStream(Minutes.FIVE);
+	}
+
+	@Bean
+	@ConditionalOnProperty(name = "oi.15min", havingValue = "true",matchIfMissing = true)
+	KafkaStreams openInterestkafkaStreams15Minute() {
+		return buildOiStream(Minutes.FIFTEEN);
+
+
+	}
+	@Bean
+	@ConditionalOnProperty(name = "oi.30min", havingValue = "true", matchIfMissing = true)
+	KafkaStreams openInterestkafkaStreams30Minute() {
+		return buildOiStream(Minutes.THIRTY);
+
+
+	}
+	@Bean
+	@ConditionalOnProperty(name = "oi.60min", havingValue = "true", matchIfMissing = true)
+	KafkaStreams openInterestkafkaStreams60Minute() {
+		return buildOiStream(Minutes.SIXTY);
+	}
 
 	private KafkaStreams buildOiStream(Minutes minutes) {
 
@@ -139,7 +139,7 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 					OpenInterestResult openInterestResult = new OpenInterestResult(
 							getFormattedDate(key.window().start(), zoneId),
 							getFormattedDate(key.window().end(), zoneId),
-							Duration.between(Instant.ofEpochSecond(key.window().start()), Instant.ofEpochSecond(key.window().end())).toMinutes(),
+							String.valueOf(Duration.between(Instant.ofEpochSecond(key.window().end()), Instant.ofEpochSecond(key.window().start())).toMinutes()),
 							key.key(),
 							oiChange,
 							value.getFirstOi().getToken(),
@@ -150,14 +150,15 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 							priceChange,
 							findOiInterpretation(priceChange, oiChange).name(),
 							findOiSentiment(priceChange, oiChange),
-							"", "", "", "", 0, value.getLastOi().getVolume()
+							"", "", "", "", 0, value.getLastOi().getVolume(),
+							""
 					);
 					return KeyValue.pair(key.key(), openInterestResult);
 				});
 
 		KStream<String, OpenInterestResult> oiAndSymbolJoinedStream = windowingStream.leftJoin(symbolTable, (openInterestResult, symbol) -> {
 			if(symbol == null ){
-				log.info("Symbol detail doesnt exist {}", openInterestResult.getKey());
+				log.info("Symbol detail doesnt exist {}", openInterestResult.getToken());
 				return openInterestResult;
 			}
 			openInterestResult.setExchange(symbol.getExchange());
@@ -165,6 +166,7 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 			openInterestResult.setExpiry(symbol.getExpiry());
 			openInterestResult.setStrike(symbol.getStrike());
 			openInterestResult.setInstrumentType(symbol.getInstrumentType());
+			openInterestResult.setSymbol(Utils.generateSymbol(symbol));
 			return openInterestResult;
 		}, Joined.with(Serdes.String(), new OpenInterestResultSerde(), new SymbolDetailSerde()));
 
@@ -176,6 +178,8 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 		Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
 		return streams;
 	}
+
+
 
 	private void writeOutputToTopic(Minutes minutes, KStream<String, OpenInterestResult> oiAndSymbolJoinedStream) {
 		oiAndSymbolJoinedStream.to(getOutputTopic(minutes), Produced.<String, OpenInterestResult>with(Serdes.String(), new OpenInterestResultSerde()));
@@ -229,7 +233,7 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 		props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
 		props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
 
-		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "abimanyu".concat("-").concat(String.valueOf(minutes.getValue())));
+		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "oi-change".concat("-").concat(String.valueOf(minutes.getValue())));
 
 		//props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, 5);
 		return props;
@@ -237,7 +241,8 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 
 	private String getOutputTopic(Minutes minutes) {
 
-		return openInterestOutputTopic.concat("_").concat(String.valueOf(minutes.getValue()));
+		//return openInterestOutputTopic.concat("_").concat(String.valueOf(minutes.getValue()));
+		return openInterestOutputTopic;
 
 	}
 

@@ -16,11 +16,12 @@ public class OpenInterestResult {
     @JsonProperty("windowEnd")
     private String windowEnd;
 
-    @JsonProperty("windowDuration")
-    private long windowDuration;
+    @JsonProperty("windowInterval")
+    private String windowInterval;
+    @JsonProperty("windowType")
+    private String windowType;
 
-    @JsonProperty("key")
-    private String key;
+
 
     @JsonProperty("oiChange")
     private long oiChange;
@@ -66,4 +67,6 @@ public class OpenInterestResult {
 
     @JsonProperty("volume")
     private int volume;
+    @JsonProperty("symbol")
+    private String symbol;
 }

@@ -3,9 +3,11 @@ package com.laabhum.posttradestreamingservice.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class Tick {
     @JsonProperty("window_start")
     private String windowStart;
@@ -51,4 +53,6 @@ public class Tick {
 
     @JsonProperty("strike")
     private int strike;
+    @JsonProperty("symbol")
+    private String symbol;
 }

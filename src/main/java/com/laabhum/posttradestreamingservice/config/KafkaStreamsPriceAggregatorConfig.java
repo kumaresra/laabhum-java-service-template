@@ -128,7 +128,7 @@ public class KafkaStreamsPriceAggregatorConfig {
 							value.getCloseInstrumentTick().getLastPrice(),
 							value.getMinInstrumentTick().getLastPrice(),
 							value.getMaxInstrumentTick().getLastPrice(),
-							"", "", "", "", 0
+							"", "", "", "", 0,""
 					);
 					return KeyValue.pair(key.key(), openInterestResult);
 				});
@@ -143,6 +143,7 @@ public class KafkaStreamsPriceAggregatorConfig {
 			tick.setExpiry(symbol.getExpiry());
 			tick.setStrike(symbol.getStrike());
 			tick.setInstrumentType(symbol.getInstrumentType());
+			tick.setSymbol(Utils.generateSymbol(symbol));
 			return tick;
 		}, Joined.with(Serdes.String(), new TickSerde(), new SymbolDetailSerde()));
 
@@ -174,7 +175,8 @@ public class KafkaStreamsPriceAggregatorConfig {
 
 	private String getOutputTopic(Minutes minutes) {
 
-		return openInterestOutputTopic.concat("_").concat(String.valueOf(minutes.getValue()));
+		//return openInterestOutputTopic.concat("_").concat(String.valueOf(minutes.getValue()));
+		return openInterestOutputTopic;
 
 	}
 

@@ -2,6 +2,7 @@ package com.laabhum.posttradestreamingservice.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.laabhum.posttradestreamingservice.model.AggregationResult;
+import com.laabhum.posttradestreamingservice.model.SymbolDetail;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -21,5 +22,9 @@ public class Utils {
 	public static String getFormattedDate(long timeinmillis, ZoneId zoneId) {
 		return Instant.ofEpochMilli(timeinmillis).atZone(zoneId)
 				.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+	}
+
+	public static String generateSymbol(SymbolDetail symbol) {
+		return symbol.getExchange() + symbol.getName() + symbol.getExpiry() + symbol.getStrike() + symbol.getInstrumentType();
 	}
 }
