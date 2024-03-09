@@ -61,11 +61,22 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 
 	}
 	@Bean
+	@ConditionalOnProperty(name = "oi.3min", havingValue = "true",matchIfMissing = true)
+	KafkaStreams openInterestkafkaStreams3Minute() {
+		return buildOiStream(Minutes.THREE);
+
+
+	}
+	@Bean
 	@ConditionalOnProperty(name = "oi.5min", havingValue = "true",matchIfMissing = true)
 	KafkaStreams openInterestkafkaStreams5Minute() {
 		return buildOiStream(Minutes.FIVE);
 	}
-
+	@Bean
+	@ConditionalOnProperty(name = "oi.10min", havingValue = "true",matchIfMissing = true)
+	KafkaStreams openInterestkafkaStreams10Minute() {
+		return buildOiStream(Minutes.TEN);
+	}
 	@Bean
 	@ConditionalOnProperty(name = "oi.15min", havingValue = "true",matchIfMissing = true)
 	KafkaStreams openInterestkafkaStreams15Minute() {
@@ -140,7 +151,7 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 							getFormattedDate(key.window().start(), zoneId),
 							getFormattedDate(key.window().end(), zoneId),
 							String.valueOf(Duration.between(Instant.ofEpochSecond(key.window().end()), Instant.ofEpochSecond(key.window().start())).toMinutes()),
-							key.key(),
+							"minutes",
 							oiChange,
 							value.getFirstOi().getToken(),
 							value.getFirstOi().getOpenInterest(),

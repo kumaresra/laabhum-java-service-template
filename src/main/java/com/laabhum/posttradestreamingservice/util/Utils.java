@@ -31,7 +31,7 @@ public class Utils {
 		return symbol.getExchange() + symbol.getName() + convertExpiryString(symbol.getExpiry() )+ symbol.getStrike() + symbol.getInstrumentType();
 	}
 
-	
+
 	public static String convertExpiryString(String input) {
 
 

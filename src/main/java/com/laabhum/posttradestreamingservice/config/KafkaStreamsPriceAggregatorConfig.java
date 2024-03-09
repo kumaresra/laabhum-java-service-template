@@ -120,8 +120,8 @@ public class KafkaStreamsPriceAggregatorConfig {
 					Tick openInterestResult = new Tick(
 							getFormattedDate(key.window().start(), zoneId),
 							getFormattedDate(key.window().end(), zoneId),
-							Duration.between(Instant.ofEpochSecond(key.window().start()), Instant.ofEpochSecond(key.window().end())).toMinutes(),
-							key.key(),
+							String.valueOf(Duration.between(Instant.ofEpochSecond(key.window().start()), Instant.ofEpochSecond(key.window().end())).toMinutes()),
+							"minutes",
 							value.getCloseInstrumentTick().getLastPrice() - value.getOpenInstrumentTick().getLastPrice(),
 							value.getOpenInstrumentTick().getInstrumentToken(),
 							value.getOpenInstrumentTick().getLastPrice(),
@@ -135,7 +135,7 @@ public class KafkaStreamsPriceAggregatorConfig {
 
 		KStream<String, Tick> tickAndSymbolJoinedStream = windowingStream.leftJoin(symbolTable, (tick, symbol) -> {
 			if (symbol == null) {
-				log.info("Symbol detail doesnt exist {}", tick.getKey());
+				log.debug("Symbol detail doesnt exist {}", tick.getToken());
 				return tick;
 			}
 			tick.setExchange(symbol.getExchange());

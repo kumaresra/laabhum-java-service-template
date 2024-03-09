@@ -18,6 +18,7 @@ public class OpenInterestResult {
 
     @JsonProperty("windowInterval")
     private String windowInterval;
+
     @JsonProperty("windowType")
     private String windowType;
 

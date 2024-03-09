@@ -15,11 +15,13 @@ public class Tick {
     @JsonProperty("window_end")
     private String windowEnd;
 
-    @JsonProperty("window_duration")
-    private long windowDuration;
+    @JsonProperty("windowInterval")
+    private String windowInterval;
 
-    @JsonProperty("key")
-    private String key;
+    @JsonProperty("windowType")
+    private String windowType;
+
+
 
     @JsonProperty("price_change")
     private double priceChange;
