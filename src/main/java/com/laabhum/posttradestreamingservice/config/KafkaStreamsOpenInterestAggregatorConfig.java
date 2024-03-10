@@ -169,7 +169,7 @@ public class KafkaStreamsOpenInterestAggregatorConfig {
 
 		KStream<String, OpenInterestResult> oiAndSymbolJoinedStream = windowingStream.leftJoin(symbolTable, (openInterestResult, symbol) -> {
 			if(symbol == null ){
-				log.info("Symbol detail doesnt exist {}", openInterestResult.getToken());
+				log.debug("Symbol detail doesnt exist {}", openInterestResult.getToken());
 				return openInterestResult;
 			}
 			openInterestResult.setExchange(symbol.getExchange());
